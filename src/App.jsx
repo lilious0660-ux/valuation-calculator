@@ -163,7 +163,7 @@ export default function App() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">EPS (원)</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">EPS (원 또는 $)</label>
                   <input type="number" name="eps" value={inputs.eps} onChange={handleInputChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
                 </div>
                 <div>
@@ -173,7 +173,7 @@ export default function App() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">BPS (원)</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">BPS (원 또는 $))</label>
                   <input type="number" name="bps" value={inputs.bps} onChange={handleInputChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
                 </div>
                 <div>
@@ -208,7 +208,7 @@ export default function App() {
                 <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                 <h3 className="text-gray-500 font-medium text-sm mb-2">수익가치 기반 적정주가</h3>
                 <p className="text-3xl font-bold text-gray-900 mb-4">
-                  {Math.floor(revenueValue).toLocaleString()} <span className="text-lg font-normal text-gray-500">원</span>
+                  {Math.floor(revenueValue).toLocaleString()} <span className="text-lg font-normal text-gray-500">원 또는 $</span>
                 </p>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <p className="text-xs text-gray-500 text-center font-medium">공식: EPS * PER</p>
@@ -220,7 +220,7 @@ export default function App() {
                 <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
                 <h3 className="text-gray-500 font-medium text-sm mb-2">자산가치 기반 적정주가</h3>
                 <p className="text-3xl font-bold text-gray-900 mb-4">
-                  {Math.floor(assetValue).toLocaleString()} <span className="text-lg font-normal text-gray-500">원</span>
+                  {Math.floor(assetValue).toLocaleString()} <span className="text-lg font-normal text-gray-500">원 또는 $</span>
                 </p>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <p className="text-xs text-gray-500 text-center font-medium">공식: BPS * PBR</p>
@@ -234,7 +234,7 @@ export default function App() {
                 </div>
                 <h3 className="text-indigo-200 font-medium text-sm mb-2">성장 적정주가</h3>
                 <p className="text-5xl font-bold text-white mb-6">
-                  {Math.floor(growthValue).toLocaleString()} <span className="text-2xl font-normal text-indigo-200">원</span>
+                  {Math.floor(growthValue).toLocaleString()} <span className="text-2xl font-normal text-indigo-200">원 또는 $</span>
                 </p>
                 <div className="bg-white/10 p-4 rounded-xl border border-white/10 backdrop-blur-sm">
                   <p className="text-sm text-indigo-100 text-center font-medium tracking-wide">
@@ -282,15 +282,15 @@ export default function App() {
                                 <div className="grid grid-cols-3 gap-2 text-sm">
                                   <div>
                                     <p className="text-gray-400 text-xs">수익가치</p>
-                                    <p className="font-semibold text-gray-700">{Math.floor(item.revenueValue).toLocaleString()}원</p>
+                                    <p className="font-semibold text-gray-700">{Math.floor(item.revenueValue).toLocaleString()}원 또는 $</p>
                                   </div>
                                   <div>
                                     <p className="text-gray-400 text-xs">자산가치</p>
-                                    <p className="font-semibold text-gray-700">{Math.floor(item.assetValue).toLocaleString()}원</p>
+                                    <p className="font-semibold text-gray-700">{Math.floor(item.assetValue).toLocaleString()}원 또는 $</p>
                                   </div>
                                   <div>
                                     <p className="text-indigo-400 text-xs">성장가치</p>
-                                    <p className="font-bold text-indigo-600">{Math.floor(item.growthValue).toLocaleString()}원</p>
+                                    <p className="font-bold text-indigo-600">{Math.floor(item.growthValue).toLocaleString()}원 또는 $</p>
                                   </div>
                                 </div>
                               </div>
