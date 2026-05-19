@@ -1,25 +1,28 @@
 import React, { useState, useMemo } from 'react';
-import { Search, TrendingUp, BarChart2, ListPlus, History, Calendar, Activity, AlertTriangle } from 'lucide-react';
+import { Search, TrendingUp, DollarSign, BarChart2, ListPlus, History, Calendar, Activity, AlertTriangle } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea } from 'recharts';
 
 export default function App() {
-  // --- 상태 관리: 현재 입력 및 시뮬레이션 ---
-  const [stockName, setStockName] = useState('삼성전자');
-  const [eps, setEps] = useState(5000);
-  const [targetPer, setTargetPer] = useState(15.0);
+  // --- 상태 관리: 모두 빈칸 및 기본값으로 초기화 ---
+  const [stockName, setStockName] = useState('');
+  const [eps, setEps] = useState('');
+  const [targetPer, setTargetPer] = useState(10.0);
   const [growth, setGrowth] = useState(10);
-  const [targetPeg, setTargetPeg] = useState(1.2);
+  const [targetPeg, setTargetPeg] = useState(1.0);
   
   // --- 상태 관리: 로컬 리스트 기록 ---
   const [valuationHistory, setValuationHistory] = useState([]);
 
+  // EPS가 빈칸일 경우 계산 오류를 막기 위해 0으로 처리하는 안전장치
+  const currentEps = parseFloat(eps) || 0;
+
   // --- 3대 가치 평가 계산 로직 ---
   const results = useMemo(() => {
-    const relative = eps * targetPer;
-    const pegValue = eps * growth * targetPeg;
-    const graham = eps * (8.5 + 2 * growth);
+    const relative = currentEps * targetPer;
+    const pegValue = currentEps * growth * targetPeg;
+    const graham = currentEps * (8.5 + 2 * growth);
     return { relative, pegValue, graham };
-  }, [eps, targetPer, growth, targetPeg]);
+  }, [currentEps, targetPer, growth, targetPeg]);
 
   // --- 하단 꺾은선 민감도 차트용 데이터 생성 ---
   const sensitivityData = useMemo(() => {
@@ -27,20 +30,21 @@ export default function App() {
     for (let g = 0; g <= 50; g += 5) {
       data.push({
         name: g,
-        value: Math.round(eps * (8.5 + 2 * g))
+        value: Math.round(currentEps * (8.5 + 2 * g))
       });
     }
     return data;
-  }, [eps]);
+  }, [currentEps]);
 
   // --- 결과 리스트에 추가하기 ---
   const handleAddToList = () => {
-    if (!stockName) return alert("기업명을 입력해주세요!");
+    if (!stockName.trim()) return alert("분석할 기업명을 입력해주세요!");
+    if (!eps || currentEps <= 0) return alert("현재 EPS를 올바르게 입력해주세요!");
     
     const newRecord = {
       id: Date.now(),
       stockName,
-      eps,
+      eps: currentEps,
       targetPer,
       growth,
       targetPeg,
@@ -48,6 +52,10 @@ export default function App() {
       createdAt: new Date()
     };
     setValuationHistory([newRecord, ...valuationHistory]);
+    
+    // 추가 후 입력창 비워주기 (선택 사항: 주석 처리 시 입력값 유지)
+    // setStockName('');
+    // setEps('');
   };
 
   return (
@@ -78,11 +86,10 @@ export default function App() {
                   type="text" value={stockName} 
                   onChange={(e) => setStockName(e.target.value)}
                   className="text-2xl font-bold border-b-2 border-slate-200 focus:border-blue-600 outline-none pb-2 transition-all text-slate-800"
-                  placeholder="예: 엔비디아"
+                  placeholder="기업명을 입력하세요"
                 />
               </div>
               
-              {/* 🔥 수정된 부분: EPS 라벨에서 기호와 단위를 깔끔하게 지웠습니다! */}
               <div className="flex-1 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
                   현재 EPS
@@ -90,8 +97,9 @@ export default function App() {
                 <div className="flex items-center gap-2 border-b-2 border-slate-200 focus-within:border-blue-600 transition-all">
                   <input 
                     type="number" step="0.01" value={eps} 
-                    onChange={(e) => setEps(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setEps(e.target.value)}
                     className="text-2xl font-bold outline-none pb-2 w-full text-slate-800"
+                    placeholder="0"
                   />
                   <span className="text-sm font-bold text-slate-400 pb-2">(원/$)</span>
                 </div>
