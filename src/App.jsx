@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ReferenceGrid } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip } from 'recharts';
 
-// 🌟 유정님이 찾으신 Firebase 고유 키값을 완벽하게 동기화해두었습니다!
 const firebaseConfig = {
   apiKey: "AIzaSyBh6lx-cPvoxntoVOwfXLg9_MqbEdZSwv8",
   authDomain: "share-price-calculate.firebaseapp.com",
@@ -17,7 +16,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export default function App() {
-  // --- 대시보드 상태 관리 (유정님이 주신 샘플 기준 초기값 세팅) ---
   const [eps, setEps] = useState(14.12);
   const [targetPer, setTargetPer] = useState(28.11);
   const [growth, setGrowth] = useState(13);
@@ -25,15 +23,13 @@ export default function App() {
   const [discountRate, setDiscountRate] = useState(10);
   const [isSaving, setIsSaving] = useState(false);
 
-  // --- 3대 밸류에이션 계산 공식 ---
   const valuation = useMemo(() => {
-    const relative = eps * targetPer;          // 상대가치
-    const peg = eps * growth * targetPeg;       // PEG 가치
-    const graham = eps * (8.5 + 2 * growth);    // 그레이엄 공식성장가치
+    const relative = eps * targetPer;          
+    const peg = eps * growth * targetPeg;       
+    const graham = eps * (8.5 + 2 * growth);    
     return { relative, peg, graham };
   }, [eps, targetPer, growth, targetPeg]);
 
-  // --- 하단 꺾은선 민감도 차트용 데이터 생성 ---
   const chartData = useMemo(() => {
     const data = [];
     for (let g = 0; g <= 50; g += 5) {
@@ -45,7 +41,6 @@ export default function App() {
     return data;
   }, [eps]);
 
-  // --- 데이터베이스 저장 기능 ---
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -66,13 +61,11 @@ export default function App() {
     <div className="min-h-screen bg-[#0F111A] text-slate-100 font-sans flex flex-col items-center p-4 md:p-8">
       <div className="w-full max-w-4xl bg-[#161925] rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-800/80">
         
-        {/* 상단 타이틀 */}
         <div className="text-center mb-8">
           <h2 className="text-sm font-bold text-slate-400 tracking-wider">SK하이닉스, 인텔 메모리 사업 인수 과정 분석</h2>
           <p className="text-[11px] text-emerald-400 mt-1">정상 성장 범위: 빅테크 기업의 평균적 성장 기대치입니다.</p>
         </div>
 
-        {/* 1. 상단 바 차트 (3대 가치 비교) */}
         <div className="h-64 w-full mb-8 bg-[#1B1E2E]/40 rounded-2xl p-4 border border-slate-800/50">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={[
@@ -91,7 +84,6 @@ export default function App() {
           </ResponsiveContainer>
         </div>
 
-        {/* 2. 중단 민감도 곡선 차트 */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2 px-1">
             <h3 className="text-base font-bold text-white">성장률(g)에 따른 내재가치 변화 <span className="text-xs text-blue-400 font-normal">(폭등 지점 확인)</span></h3>
@@ -105,7 +97,6 @@ export default function App() {
                 <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={3} dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
-            {/* 비현실적 성장 구역 시각적 음영 효과 */}
             <div className="absolute top-0 right-0 w-1/2 h-full bg-red-500/5 rounded-r-2xl border-l border-red-500/10 pointer-events-none flex items-center justify-content-center">
               <span className="text-[10px] text-red-400/40 font-semibold tracking-wider">비현실적 성장 구역 (g &gt; 25%)</span>
             </div>
@@ -117,10 +108,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* 3. 하단 슬라이더 조절바 (유정님이 요청하신 실시간 반응형 UI) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#121420] p-6 rounded-2xl border border-slate-800/60">
           
-          {/* 현재 EPS 입력창 */}
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400 font-medium">현재 EPS ($)</span>
@@ -133,7 +122,6 @@ export default function App() {
             />
           </div>
 
-          {/* 목표 PER 슬라이더 */}
           <div className="flex flex-col gap-2 justify-center">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400 font-medium">목표 PER</span>
@@ -146,7 +134,6 @@ export default function App() {
             />
           </div>
 
-          {/* 장기 성장률 슬라이더 */}
           <div className="flex flex-col gap-2 justify-center">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400 font-medium">장기 성장률 (%)</span>
@@ -159,7 +146,6 @@ export default function App() {
             />
           </div>
 
-          {/* 목표 PEG 슬라이더 */}
           <div className="flex flex-col gap-2 justify-center">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400 font-medium">목표 PEG</span>
@@ -172,7 +158,6 @@ export default function App() {
             />
           </div>
 
-          {/* 할인율 슬라이더 */}
           <div className="flex flex-col gap-2 justify-center md:col-span-2 mt-2">
             <div className="flex justify-between text-sm">
               <span className="text-slate-400 font-medium">할인율 (%)</span>
@@ -187,7 +172,6 @@ export default function App() {
 
         </div>
 
-        {/* 저장 버튼 */}
         <button
           onClick={handleSave}
           disabled={isSaving}
