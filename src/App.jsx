@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, TrendingUp, DollarSign, BarChart2, ListPlus, History, Calendar, Activity, AlertTriangle } from 'lucide-react';
+import { Search, TrendingUp, BarChart2, ListPlus, History, Calendar, Activity, AlertTriangle } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea } from 'recharts';
 
 export default function App() {
@@ -81,9 +81,11 @@ export default function App() {
                   placeholder="예: 엔비디아"
                 />
               </div>
+              
+              {/* 🔥 수정된 부분: EPS 라벨에서 기호와 단위를 깔끔하게 지웠습니다! */}
               <div className="flex-1 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                  <DollarSign size={14} /> 현재 EPS (원/$)
+                  현재 EPS
                 </label>
                 <div className="flex items-center gap-2 border-b-2 border-slate-200 focus-within:border-blue-600 transition-all">
                   <input 
@@ -120,7 +122,7 @@ export default function App() {
               ))}
             </div>
 
-            {/* 3. Recharts 전문 차트 영역 (비현실적 구역 포함) */}
+            {/* 3. Recharts 전문 차트 영역 */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
               
               {/* 바 차트 */}
@@ -170,7 +172,7 @@ export default function App() {
                       formatter={(value) => [`${value.toLocaleString()} (원/$)`, '그레이엄 내재가치']}
                     />
                     
-                    {/* 🔥 비현실적 성장 구역 표시 */}
+                    {/* 비현실적 성장 구역 표시 */}
                     <ReferenceArea x1={25} x2={50} fill="#FCA5A5" fillOpacity={0.15} stroke="none" />
                     
                     <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={3} dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
