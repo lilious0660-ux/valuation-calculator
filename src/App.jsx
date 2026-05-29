@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Search, TrendingUp, DollarSign, BarChart2, ListPlus, History, Calendar, Activity, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, TrendingUp, DollarSign, BarChart2, ListPlus, History, Calendar, Activity, AlertTriangle, Trash2, MousePointerClick } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea } from 'recharts';
 
 export default function App() {
@@ -10,8 +10,26 @@ export default function App() {
   const [growth, setGrowth] = useState(10);
   const [targetPeg, setTargetPeg] = useState(1.0);
   
-  // --- 상태 관리: 로컬 리스트 기록 ---
-  const [valuationHistory, setValuationHistory] = useState([]);
+  // --- 상태 관리: 로컬스토리지(브라우저 저장소)에서 기존 기록 불러오기 ---
+  const [valuationHistory, setValuationHistory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('valuationHistory');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          return parsed.map(item => ({ ...item, createdAt: new Date(item.createdAt) }));
+        } catch (e) {
+          return [];
+        }
+      }
+    }
+    return [];
+  });
+
+  // --- 히스토리가 바뀔 때마다 브라우저에 자동 저장 ---
+  useEffect(() => {
+    localStorage.setItem('valuationHistory', JSON.stringify(valuationHistory));
+  }, [valuationHistory]);
 
   // EPS가 빈칸일 경우 계산 오류를 막기 위해 0으로 처리하는 안전장치
   const currentEps = parseFloat(eps) || 0;
@@ -51,11 +69,32 @@ export default function App() {
       ...results,
       createdAt: new Date()
     };
+    // 새로운 기록이 위로 쌓이도록 배열 맨 앞에 추가
     setValuationHistory([newRecord, ...valuationHistory]);
-    
-    // 추가 후 입력창 비워주기 (선택 사항: 주석 처리 시 입력값 유지)
-    // setStockName('');
-    // setEps('');
+  };
+
+  // --- 히스토리 전체 삭제 ---
+  const handleClearAllHistory = () => {
+    if (window.confirm("저장된 모든 비교 분석 리스트를 삭제하시겠습니까?")) {
+      setValuationHistory([]);
+    }
+  };
+
+  // --- 히스토리 개별 삭제 ---
+  const handleDeleteItem = (e, id) => {
+    e.stopPropagation(); // 클릭 시 카드를 불러오는 기능이 동시에 실행되는 것을 막음
+    if (window.confirm("이 분석 기록을 삭제하시겠습니까?")) {
+      setValuationHistory(valuationHistory.filter(item => item.id !== id));
+    }
+  };
+
+  // --- 히스토리 불러오기 (좌측 화면에 데이터 세팅) ---
+  const handleLoadRecord = (record) => {
+    setStockName(record.stockName);
+    setEps(record.eps);
+    setTargetPer(record.targetPer);
+    setGrowth(record.growth);
+    setTargetPeg(record.targetPeg);
   };
 
   return (
@@ -92,7 +131,7 @@ export default function App() {
               
               <div className="flex-1 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                  현재 EPS
+                  현재 연간 EPS
                 </label>
                 <div className="flex items-center gap-2 border-b-2 border-slate-200 focus-within:border-blue-600 transition-all">
                   <input 
@@ -180,7 +219,6 @@ export default function App() {
                       formatter={(value) => [`${value.toLocaleString()} (원/$)`, '그레이엄 내재가치']}
                     />
                     
-                    {/* 비현실적 성장 구역 표시 */}
                     <ReferenceArea x1={25} x2={50} fill="#FCA5A5" fillOpacity={0.15} stroke="none" />
                     
                     <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={3} dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
@@ -242,11 +280,23 @@ export default function App() {
           {/* ================= 우측: 결과 누적 리스트 ================= */}
           <div className="xl:col-span-1 flex flex-col h-full max-h-[950px]">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
-              <div className="p-6 border-b border-slate-100 bg-slate-50">
-                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <History className="text-blue-600" size={18} /> 비교 분석 리스트
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">추가된 결과가 임시 저장됩니다.</p>
+              <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <History className="text-blue-600" size={18} /> 비교 분석 리스트
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">카드를 클릭하여 데이터를 다시 불러오세요.</p>
+                </div>
+                {/* 전체 삭제 버튼 */}
+                {valuationHistory.length > 0 && (
+                  <button 
+                    onClick={handleClearAllHistory}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="히스토리 전체 삭제"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
               </div>
               
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 custom-scrollbar">
@@ -257,12 +307,28 @@ export default function App() {
                   </div>
                 ) : (
                   valuationHistory.map((item) => (
-                    <div key={item.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-colors">
-                      <div className="flex justify-between items-start mb-3 border-b border-slate-50 pb-3">
+                    <div 
+                      key={item.id} 
+                      onClick={() => handleLoadRecord(item)}
+                      className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group relative"
+                      title="클릭하여 시뮬레이션 불러오기"
+                    >
+                      {/* 🔥 개별 삭제 버튼 (마우스 오버 시 표시) */}
+                      <button
+                        onClick={(e) => handleDeleteItem(e, item.id)}
+                        className="absolute top-3 right-3 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                        title="이 기록 삭제하기"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+
+                      <div className="flex justify-between items-start mb-3 border-b border-slate-50 pb-3 pr-6">
                         <div>
-                          <h4 className="font-bold text-slate-800 text-lg">{item.stockName}</h4>
+                          <h4 className="font-bold text-slate-800 text-lg flex items-center gap-1.5">
+                            {item.stockName}
+                          </h4>
                           <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-1">
-                            <Calendar size={10} /> {item.createdAt.toLocaleTimeString()}
+                            <Calendar size={10} /> {item.createdAt.toLocaleDateString()} {item.createdAt.toLocaleTimeString()}
                           </span>
                         </div>
                         <div className="text-right">
@@ -270,11 +336,10 @@ export default function App() {
                           <span className="font-black text-blue-600 text-lg">
                             {item.graham.toLocaleString(undefined, { maximumFractionDigits: 1 })}
                           </span>
-                          <span className="text-[10px] text-slate-500 ml-1">(원/$)</span>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs relative">
                         <div className="bg-slate-50 py-2 rounded-lg">
                           <span className="block text-slate-400 mb-1">EPS</span>
                           <span className="font-bold text-slate-700">{item.eps}</span>
@@ -286,6 +351,13 @@ export default function App() {
                         <div className="bg-slate-50 py-2 rounded-lg">
                           <span className="block text-slate-400 mb-1">성장률</span>
                           <span className="font-bold text-slate-700">{item.growth}%</span>
+                        </div>
+                        
+                        {/* 마우스 오버 시 나타나는 '불러오기' 안내 오버레이 */}
+                        <div className="absolute inset-0 bg-blue-50/90 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-blue-600 font-bold flex items-center gap-1">
+                            <MousePointerClick size={14} /> 데이터 불러오기
+                          </span>
                         </div>
                       </div>
                     </div>
