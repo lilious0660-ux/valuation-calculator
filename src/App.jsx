@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, TrendingUp, DollarSign, BarChart2, ListPlus, History, Calendar, Activity, AlertTriangle, Trash2, MousePointerClick } from 'lucide-react';
+import { Search, TrendingUp, DollarSign, BarChart2, ListPlus, History, Calendar, Activity, AlertTriangle, Trash2, MousePointerClick, ChevronDown, ChevronUp } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea } from 'recharts';
 
 export default function App() {
@@ -10,7 +10,7 @@ export default function App() {
   const [growth, setGrowth] = useState(10);
   const [targetPeg, setTargetPeg] = useState(1.0);
   
-  // --- 상태 관리: 로컬스토리지(브라우저 저장소)에서 기존 기록 불러오기 ---
+  // --- 상태 관리: 로컬스토리지에서 기존 기록 불러오기 ---
   const [valuationHistory, setValuationHistory] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('valuationHistory');
@@ -25,6 +25,9 @@ export default function App() {
     }
     return [];
   });
+
+  // --- 상태 관리: 우측 리스트 그룹(폴더) 접기/펴기 상태 ---
+  const [expandedGroups, setExpandedGroups] = useState({});
 
   // --- 히스토리가 바뀔 때마다 브라우저에 자동 저장 ---
   useEffect(() => {
@@ -53,6 +56,26 @@ export default function App() {
     return data;
   }, [currentEps]);
 
+  // --- 데이터를 기업명(stockName) 기준으로 묶기 ---
+  const groupedHistory = useMemo(() => {
+    const groups = {};
+    valuationHistory.forEach(item => {
+      if (!groups[item.stockName]) {
+        groups[item.stockName] = [];
+      }
+      groups[item.stockName].push(item);
+    });
+    return groups;
+  }, [valuationHistory]);
+
+  // --- 그룹 접기/펴기 토글 함수 ---
+  const toggleGroup = (groupName) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
+
   // --- 결과 리스트에 추가하기 ---
   const handleAddToList = () => {
     if (!stockName.trim()) return alert("분석할 기업명을 입력해주세요!");
@@ -60,7 +83,7 @@ export default function App() {
     
     const newRecord = {
       id: Date.now(),
-      stockName,
+      stockName: stockName.trim(),
       eps: currentEps,
       targetPer,
       growth,
@@ -68,12 +91,19 @@ export default function App() {
       ...results,
       createdAt: new Date()
     };
+    
     setValuationHistory([newRecord, ...valuationHistory]);
+    
+    // 분석을 추가하면 해당 기업의 그룹(폴더)이 자동으로 열리도록 설정
+    setExpandedGroups(prev => ({
+      ...prev,
+      [newRecord.stockName]: true
+    }));
   };
 
-  // --- 히스토리 개별 삭제 (항상 보이도록 수정됨) ---
+  // --- 히스토리 개별 삭제 ---
   const handleDeleteItem = (e, id) => {
-    e.stopPropagation(); // 클릭 시 카드를 불러오는 기능이 동시에 실행되는 것을 막음
+    e.stopPropagation(); 
     if (window.confirm("이 분석 기록을 삭제하시겠습니까?")) {
       setValuationHistory(valuationHistory.filter(item => item.id !== id));
     }
@@ -116,7 +146,7 @@ export default function App() {
                   type="text" value={stockName} 
                   onChange={(e) => setStockName(e.target.value)}
                   className="text-2xl font-bold border-b-2 border-slate-200 focus:border-blue-600 outline-none pb-2 transition-all text-slate-800"
-                  placeholder="기업명을 입력하세요"
+                  placeholder="예: SK하이닉스"
                 />
               </div>
               
@@ -264,7 +294,7 @@ export default function App() {
 
           </div>
 
-          {/* ================= 우측: 결과 누적 리스트 ================= */}
+          {/* ================= 우측: 결과 누적 리스트 (기업별 그룹핑) ================= */}
           <div className="xl:col-span-1 flex flex-col h-full max-h-[950px]">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
               <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
@@ -272,72 +302,99 @@ export default function App() {
                   <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                     <History className="text-blue-600" size={18} /> 비교 분석 리스트
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">카드를 클릭하여 데이터를 다시 불러오세요.</p>
+                  <p className="text-xs text-slate-400 mt-1">기업별로 묶어서 관리할 수 있습니다.</p>
                 </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 custom-scrollbar">
-                {valuationHistory.length === 0 ? (
+              <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50 custom-scrollbar">
+                {Object.keys(groupedHistory).length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-slate-400 py-20">
                     <History size={40} className="mb-4 opacity-20" />
                     <p className="text-sm">버튼을 눌러 결과를 추가해보세요.</p>
                   </div>
                 ) : (
-                  valuationHistory.map((item) => (
-                    <div 
-                      key={item.id} 
-                      onClick={() => handleLoadRecord(item)}
-                      className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group relative"
-                      title="클릭하여 시뮬레이션 불러오기"
-                    >
-                      {/* 🔥 항상 뚜렷하게 보이도록 수정된 개별 삭제 버튼 */}
-                      <button
-                        onClick={(e) => handleDeleteItem(e, item.id)}
-                        className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors z-10"
-                        title="이 기록 삭제하기"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-
-                      <div className="flex justify-between items-start mb-3 border-b border-slate-50 pb-3 pr-6">
-                        <div>
-                          <h4 className="font-bold text-slate-800 text-lg flex items-center gap-1.5">
-                            {item.stockName}
-                          </h4>
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-1">
-                            <Calendar size={10} /> {item.createdAt.toLocaleDateString()} {item.createdAt.toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs text-slate-400 block mb-1">그레이엄 가치</span>
-                          <span className="font-black text-blue-600 text-lg">
-                            {item.graham.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-2 text-center text-xs relative">
-                        <div className="bg-slate-50 py-2 rounded-lg">
-                          <span className="block text-slate-400 mb-1">EPS</span>
-                          <span className="font-bold text-slate-700">{item.eps}</span>
-                        </div>
-                        <div className="bg-slate-50 py-2 rounded-lg">
-                          <span className="block text-slate-400 mb-1">목표 PER</span>
-                          <span className="font-bold text-slate-700">{item.targetPer}</span>
-                        </div>
-                        <div className="bg-slate-50 py-2 rounded-lg">
-                          <span className="block text-slate-400 mb-1">성장률</span>
-                          <span className="font-bold text-slate-700">{item.growth}%</span>
-                        </div>
+                  <div className="space-y-4">
+                    {Object.entries(groupedHistory).map(([groupStockName, items]) => (
+                      <div key={groupStockName} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         
-                        <div className="absolute inset-0 bg-blue-50/90 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="text-blue-600 font-bold flex items-center gap-1">
-                            <MousePointerClick size={14} /> 데이터 불러오기
-                          </span>
-                        </div>
+                        {/* 기업명 헤더 (클릭 시 아코디언 토글) */}
+                        <button
+                          onClick={() => toggleGroup(groupStockName)}
+                          className="w-full flex items-center justify-between p-4 bg-slate-100/50 hover:bg-slate-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800 text-lg">{groupStockName}</span>
+                            <span className="bg-blue-100 text-blue-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                              {items.length}건
+                            </span>
+                          </div>
+                          <div className="text-slate-400">
+                            {expandedGroups[groupStockName] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                          </div>
+                        </button>
+
+                        {/* 개별 분석 기록 아이템들 (헤더가 열려있을 때만 보임) */}
+                        {expandedGroups[groupStockName] && (
+                          <div className="p-3 bg-slate-50/50 border-t border-slate-100 space-y-3">
+                            {items.map((item) => (
+                              <div 
+                                key={item.id} 
+                                onClick={() => handleLoadRecord(item)}
+                                className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group relative"
+                                title="클릭하여 시뮬레이션 불러오기"
+                              >
+                                {/* 개별 삭제 버튼 */}
+                                <button
+                                  onClick={(e) => handleDeleteItem(e, item.id)}
+                                  className="absolute top-2 right-2 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors z-10"
+                                  title="이 기록 삭제하기"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+
+                                <div className="flex justify-between items-start mb-3 border-b border-slate-50 pb-2 pr-8">
+                                  <div>
+                                    <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                                      <Calendar size={12} className="text-slate-400" /> 
+                                      {item.createdAt.toLocaleDateString()} {item.createdAt.toLocaleTimeString()}
+                                    </span>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="font-black text-blue-600 text-base">
+                                      {item.graham.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 ml-1 font-normal">(원/$)</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-2 text-center text-[11px] relative">
+                                  <div className="bg-slate-50 py-1.5 rounded">
+                                    <span className="block text-slate-400 mb-0.5">EPS</span>
+                                    <span className="font-bold text-slate-700">{item.eps}</span>
+                                  </div>
+                                  <div className="bg-slate-50 py-1.5 rounded">
+                                    <span className="block text-slate-400 mb-0.5">목표 PER</span>
+                                    <span className="font-bold text-slate-700">{item.targetPer}</span>
+                                  </div>
+                                  <div className="bg-slate-50 py-1.5 rounded">
+                                    <span className="block text-slate-400 mb-0.5">성장률</span>
+                                    <span className="font-bold text-slate-700">{item.growth}%</span>
+                                  </div>
+                                  
+                                  {/* 호버 시 나타나는 오버레이 */}
+                                  <div className="absolute inset-0 bg-blue-50/90 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="text-blue-600 font-bold flex items-center gap-1 text-xs">
+                                      <MousePointerClick size={14} /> 데이터 불러오기
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
