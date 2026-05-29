@@ -31,7 +31,6 @@ export default function App() {
     localStorage.setItem('valuationHistory', JSON.stringify(valuationHistory));
   }, [valuationHistory]);
 
-  // EPS가 빈칸일 경우 계산 오류를 막기 위해 0으로 처리하는 안전장치
   const currentEps = parseFloat(eps) || 0;
 
   // --- 3대 가치 평가 계산 로직 ---
@@ -69,18 +68,10 @@ export default function App() {
       ...results,
       createdAt: new Date()
     };
-    // 새로운 기록이 위로 쌓이도록 배열 맨 앞에 추가
     setValuationHistory([newRecord, ...valuationHistory]);
   };
 
-  // --- 히스토리 전체 삭제 ---
-  const handleClearAllHistory = () => {
-    if (window.confirm("저장된 모든 비교 분석 리스트를 삭제하시겠습니까?")) {
-      setValuationHistory([]);
-    }
-  };
-
-  // --- 히스토리 개별 삭제 ---
+  // --- 히스토리 개별 삭제 (항상 보이도록 수정됨) ---
   const handleDeleteItem = (e, id) => {
     e.stopPropagation(); // 클릭 시 카드를 불러오는 기능이 동시에 실행되는 것을 막음
     if (window.confirm("이 분석 기록을 삭제하시겠습니까?")) {
@@ -172,7 +163,6 @@ export default function App() {
             {/* 3. Recharts 전문 차트 영역 */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
               
-              {/* 바 차트 */}
               <div className="flex flex-col h-72">
                 <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
                   <BarChart2 size={16} className="text-blue-600" /> 모델별 가치 비교
@@ -196,13 +186,11 @@ export default function App() {
                 </ResponsiveContainer>
               </div>
 
-              {/* 꺾은선 차트 (비현실적 구역 음영 표시) */}
               <div className="flex flex-col h-72 relative">
                 <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
                   <Activity size={16} className="text-emerald-500" /> 성장률(g) 민감도 곡선
                 </h3>
                 
-                {/* 경고 범례 */}
                 <div className="absolute top-0 right-0 flex items-center gap-1.5 bg-red-50 border border-red-100 px-2.5 py-1 rounded-full pointer-events-none z-10">
                   <AlertTriangle size={12} className="text-red-500" />
                   <span className="text-[10px] font-bold text-red-600">비현실적 성장 구역 (g ≥ 25%)</span>
@@ -220,7 +208,6 @@ export default function App() {
                     />
                     
                     <ReferenceArea x1={25} x2={50} fill="#FCA5A5" fillOpacity={0.15} stroke="none" />
-                    
                     <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={3} dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -287,16 +274,6 @@ export default function App() {
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">카드를 클릭하여 데이터를 다시 불러오세요.</p>
                 </div>
-                {/* 전체 삭제 버튼 */}
-                {valuationHistory.length > 0 && (
-                  <button 
-                    onClick={handleClearAllHistory}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="히스토리 전체 삭제"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
               </div>
               
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 custom-scrollbar">
@@ -313,13 +290,13 @@ export default function App() {
                       className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group relative"
                       title="클릭하여 시뮬레이션 불러오기"
                     >
-                      {/* 🔥 개별 삭제 버튼 (마우스 오버 시 표시) */}
+                      {/* 🔥 항상 뚜렷하게 보이도록 수정된 개별 삭제 버튼 */}
                       <button
                         onClick={(e) => handleDeleteItem(e, item.id)}
-                        className="absolute top-3 right-3 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                        className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors z-10"
                         title="이 기록 삭제하기"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
 
                       <div className="flex justify-between items-start mb-3 border-b border-slate-50 pb-3 pr-6">
@@ -353,7 +330,6 @@ export default function App() {
                           <span className="font-bold text-slate-700">{item.growth}%</span>
                         </div>
                         
-                        {/* 마우스 오버 시 나타나는 '불러오기' 안내 오버레이 */}
                         <div className="absolute inset-0 bg-blue-50/90 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <span className="text-blue-600 font-bold flex items-center gap-1">
                             <MousePointerClick size={14} /> 데이터 불러오기
